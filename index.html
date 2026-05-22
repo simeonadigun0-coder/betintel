@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#060b14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SportIntel">
+<title>SportIntel ⚡</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #060b14;
+  --bg2:       #0d1626;
+  --bg3:       #152035;
+  --bg4:       #1c2d47;
+  --green:     #00e676;
+  --green2:    #00c853;
+  --green-glow:rgba(0,230,118,0.15);
+  --gold:      #ffd54f;
+  --gold-glow: rgba(255,213,79,0.15);
+  --orange:    #ff9800;
+  --purple:    #ce93d8;
+  --red:       #ff5252;
+  --blue:      #40c4ff;
+  --text:      #e3eaf8;
+  --text2:     #7a92b4;
+  --text3:     #3d5275;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.12);
+  --r:         14px;
+  --r2:        20px;
+
+  /* Sport accent colours */
+  --bball:     #ff9800;
+  --bball-glow:rgba(255,152,0,0.15);
+  --tennis:    #a5d6a7;
+  --tennis-glow:rgba(165,214,167,0.15);
+  --vball:     #ce93d8;
+  --vball-glow:rgba(206,147,216,0.15);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100svh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+button{cursor:pointer;border:none;background:none;font-family:inherit}
+input,select{font-family:inherit}
+
+/* ── SCREENS ── */
+.screen{display:none;flex-direction:column;min-height:100svh}
+.screen.active{display:flex}
+
+/* ══════════════ HOME ══════════════ */
+#home{
+  background:radial-gradient(ellipse 80% 40% at 50% 0%, rgba(0,150,255,0.06), transparent 65%), var(--bg);
+  padding:0 18px 100px;
+}
+.home-header{display:flex;align-items:center;justify-content:space-between;padding:52px 0 24px}
+.logo{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;letter-spacing:-.5px;color:#fff;display:flex;align-items:center;gap:8px}
+.logo-dot{width:9px;height:9px;background:var(--blue);border-radius:50%;box-shadow:0 0 10px var(--blue);animation:pulse-dot 2s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.6}}
+.settings-btn{width:40px;height:40px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:18px}
+
+/* date badge */
+.date-badge{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:10px;margin-bottom:24px}
+.date-badge .day{font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:800;color:var(--blue);line-height:1}
+.date-badge .month-year{display:flex;flex-direction:column;gap:2px}
+.date-badge .month{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:1px}
+.date-badge .year{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;line-height:1}
+.date-badge .coverage{margin-left:auto;font-size:11px;color:var(--text3);text-align:right;line-height:1.6}
+
+/* sport scan cards */
+.sport-cards{display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
+.sport-card{border-radius:var(--r2);padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;cursor:pointer;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.sport-card::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 50%,rgba(255,255,255,.07),transparent 60%);pointer-events:none}
+.sport-card:active{transform:scale(.98)}
+.sport-card.basketball{background:linear-gradient(135deg,#e65100,#ff9800);box-shadow:0 0 30px rgba(255,152,0,.25),0 8px 20px rgba(0,0,0,.4)}
+.sport-card.tennis{background:linear-gradient(135deg,#1b5e20,#a5d6a7);box-shadow:0 0 30px rgba(165,214,167,.2),0 8px 20px rgba(0,0,0,.4)}
+.sport-card.volleyball{background:linear-gradient(135deg,#4a148c,#ce93d8);box-shadow:0 0 30px rgba(206,147,216,.2),0 8px 20px rgba(0,0,0,.4)}
+.sport-card-left{display:flex;flex-direction:column;gap:4px}
+.sport-card-title{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:#fff;line-height:1;letter-spacing:-.3px}
+.sport-card-sub{font-size:12px;font-weight:500;color:rgba(255,255,255,.7)}
+.sport-card-icon{font-size:36px;flex-shrink:0}
+.sport-card-badge{position:absolute;top:12px;right:48px;background:rgba(255,255,255,.2);border-radius:99px;padding:3px 8px;font-size:11px;font-weight:700;color:#fff}
+
+/* stats row */
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px 10px;text-align:center}
+.stat-num{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;line-height:1}
+.stat-num.orange{color:var(--orange)} .stat-num.green{color:var(--tennis)} .stat-num.purple{color:var(--purple)}
+.stat-label{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-top:4px}
+
+/* ══════════════ SCANNING ══════════════ */
+#scanning{align-items:center;justify-content:center;padding:40px 24px;background:var(--bg);gap:0}
+.scan-radar{position:relative;width:200px;height:200px;margin-bottom:36px}
+.radar-ring{position:absolute;border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);animation:radar-ring 2.5s ease-out infinite}
+.radar-ring.bball{border:1px solid rgba(255,152,0,.3)}
+.radar-ring.tennis{border:1px solid rgba(165,214,167,.3)}
+.radar-ring.vball{border:1px solid rgba(206,147,216,.3)}
+.radar-ring:nth-child(1){width:60px;height:60px;animation-delay:0s}
+.radar-ring:nth-child(2){width:110px;height:110px;animation-delay:.5s}
+.radar-ring:nth-child(3){width:160px;height:160px;animation-delay:1s}
+.radar-ring:nth-child(4){width:200px;height:200px;animation-delay:1.5s}
+@keyframes radar-ring{0%{opacity:.8;transform:translate(-50%,-50%) scale(.8)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.1)}}
+.radar-sweep{position:absolute;top:50%;left:50%;width:50%;height:1px;transform-origin:left center;animation:radar-sweep 2s linear infinite}
+.radar-sweep.bball{background:linear-gradient(90deg,var(--orange),transparent)}
+.radar-sweep.tennis{background:linear-gradient(90deg,var(--tennis),transparent)}
+.radar-sweep.vball{background:linear-gradient(90deg,var(--purple),transparent)}
+@keyframes radar-sweep{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.radar-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px}
+.radar-center.bball{background:var(--orange);box-shadow:0 0 30px var(--orange)}
+.radar-center.tennis{background:var(--tennis);box-shadow:0 0 30px var(--tennis)}
+.radar-center.vball{background:var(--purple);box-shadow:0 0 30px var(--purple)}
+.scan-title{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;margin-bottom:8px;text-align:center}
+.scan-status{font-size:14px;color:var(--text2);text-align:center;min-height:20px;margin-bottom:24px}
+.progress-pct{font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:900;text-align:center;line-height:1;margin-bottom:8px}
+.progress-pct.bball{color:var(--orange)} .progress-pct.tennis{color:var(--tennis)} .progress-pct.vball{color:var(--purple)}
+.progress-bar-wrap{width:100%;max-width:320px;background:var(--bg3);border-radius:99px;height:6px;overflow:hidden;margin-bottom:12px}
+.progress-bar-fill{height:100%;border-radius:99px;width:0%;transition:width .5s ease}
+.progress-bar-fill.bball{background:linear-gradient(90deg,#e65100,var(--orange));box-shadow:0 0 10px var(--orange)}
+.progress-bar-fill.tennis{background:linear-gradient(90deg,#1b5e20,var(--tennis));box-shadow:0 0 10px var(--tennis)}
+.progress-bar-fill.vball{background:linear-gradient(90deg,#4a148c,var(--purple));box-shadow:0 0 10px var(--purple)}
+.scan-note{font-size:12px;color:var(--text3);text-align:center}
+
+/* ══════════════ RESULTS ══════════════ */
+#results{background:var(--bg)}
+.results-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:52px 18px 0;position:sticky;top:0;z-index:10}
+.results-title-row{display:flex;align-items:center;gap:12px;padding-bottom:14px}
+.back-btn{width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:18px;flex-shrink:0}
+.results-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;flex:1}
+.rescan-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
+.rescan-btn.bball{color:var(--orange)} .rescan-btn.tennis{color:var(--tennis)} .rescan-btn.vball{color:var(--purple)}
+.rescan-btn:active{transform:scale(.95)}
+
+.summary-strip{display:flex;gap:6px;padding-bottom:14px;overflow-x:auto;scrollbar-width:none}
+.summary-strip::-webkit-scrollbar{display:none}
+.summary-chip{background:var(--bg3);border:1px solid var(--border);border-radius:99px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--text2);white-space:nowrap;display:flex;align-items:center;gap:6px}
+.summary-chip .val{color:var(--text)}
+.chip-bball{border-color:rgba(255,152,0,.3);background:var(--bball-glow)} .chip-bball .val{color:var(--orange)}
+.chip-tennis{border-color:rgba(165,214,167,.3);background:var(--tennis-glow)} .chip-tennis .val{color:var(--tennis)}
+.chip-vball{border-color:rgba(206,147,216,.3);background:var(--vball-glow)} .chip-vball .val{color:var(--purple)}
+.chip-gold{border-color:rgba(255,213,79,.3);background:var(--gold-glow)} .chip-gold .val{color:var(--gold)}
+
+.filter-tabs{display:flex;gap:6px;padding-bottom:14px;overflow-x:auto;scrollbar-width:none}
+.filter-tabs::-webkit-scrollbar{display:none}
+.filter-tab{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;color:var(--text2);white-space:nowrap;cursor:pointer;transition:all .2s}
+.filter-tab.active.bball{background:var(--orange);border-color:var(--orange);color:#fff}
+.filter-tab.active.tennis{background:var(--tennis);border-color:var(--tennis);color:#000}
+.filter-tab.active.vball{background:var(--purple);border-color:var(--purple);color:#fff}
+.filter-tab:active{transform:scale(.95)}
+
+.cards-container{padding:14px 14px 90px;display:flex;flex-direction:column;gap:12px}
+
+/* ── MATCH CARDS ── */
+.match-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.match-card.star.bball{border-color:rgba(255,213,79,.4);background:linear-gradient(135deg,rgba(255,213,79,.03),var(--bg2))}
+.match-card.star.tennis{border-color:rgba(255,213,79,.4)}
+.match-card.star.vball{border-color:rgba(255,213,79,.4)}
+.match-card.high.bball{border-color:rgba(255,152,0,.25)}
+.match-card.high.tennis{border-color:rgba(165,214,167,.25)}
+.match-card.high.vball{border-color:rgba(206,147,216,.25)}
+
+.card-header{padding:12px 14px 0;display:flex;align-items:center;gap:8px}
+.league-badge{background:var(--bg3);border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kickoff-badge{font-size:11px;color:var(--text3);font-weight:600;white-space:nowrap}
+.star-badge{background:var(--gold);color:#1a1000;font-size:10px;font-weight:800;padding:3px 7px;border-radius:99px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+
+.card-teams{padding:10px 14px 4px;display:flex;align-items:center;gap:8px}
+.team-name{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;line-height:1.1;flex:1}
+.vs{font-size:12px;color:var(--text3);font-weight:700;flex-shrink:0}
+
+.card-pick{padding:0 14px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);margin-top:8px}
+.pick-pill{border-radius:8px;padding:7px 12px;font-size:14px;font-weight:700;flex:1;border:1px solid}
+.pick-pill.bball{background:var(--bball-glow);border-color:rgba(255,152,0,.3);color:var(--orange)}
+.pick-pill.tennis{background:var(--tennis-glow);border-color:rgba(165,214,167,.3);color:var(--tennis)}
+.pick-pill.vball{background:var(--vball-glow);border-color:rgba(206,147,216,.3);color:var(--purple)}
+.star .pick-pill{background:var(--gold-glow);border-color:rgba(255,213,79,.3);color:var(--gold)}
+
+.prob-block{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0}
+.prob-num{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;line-height:1}
+.conf-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.conf-label.high{color:var(--green)} .conf-label.very-high{color:var(--green)} .conf-label.medium{color:var(--gold)} .conf-label.low{color:var(--red)}
+
+.prob-bar-wrap{padding:0 14px;margin-top:10px}
+.prob-bar{height:3px;background:var(--bg3);border-radius:99px;overflow:hidden}
+.prob-bar-fill{height:100%;border-radius:99px;transition:width 1s ease}
+.bball-fill{background:var(--orange)} .tennis-fill{background:var(--tennis)} .vball-fill{background:var(--purple)} .star-fill{background:var(--gold)}
+
+.analysis-toggle{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background .2s}
+.analysis-toggle:active{background:var(--bg3)}
+.analysis-label{font-size:13px;color:var(--text2);font-weight:500}
+.analysis-chevron{font-size:12px;color:var(--text3);transition:transform .25s}
+.analysis-toggle.open .analysis-chevron{transform:rotate(180deg)}
+.analysis-body{padding:0 14px;max-height:0;overflow:hidden;transition:max-height .35s ease,padding .2s}
+.analysis-body.open{max-height:320px;padding:0 14px 14px}
+.analysis-text{font-size:13px;line-height:1.65;color:var(--text2)}
+
+.tracker-row{padding:10px 14px;display:flex;align-items:center;gap:8px}
+.tracker-label{font-size:12px;color:var(--text3);flex:1;font-weight:500}
+.tracker-btn{border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;border:1px solid;transition:all .15s;cursor:pointer;font-family:inherit}
+.tracker-btn.won{background:rgba(0,230,118,.12);border-color:rgba(0,230,118,.3);color:var(--green)}
+.tracker-btn.lost{background:rgba(255,82,82,.1);border-color:rgba(255,82,82,.3);color:var(--red)}
+.tracker-btn.skip{background:var(--bg3);border-color:var(--border);color:var(--text3)}
+.tracker-btn.won.selected{background:var(--green);color:#060b14}
+.tracker-btn.lost.selected{background:var(--red);color:#fff}
+.tracker-btn.skip.selected{background:var(--bg4);color:var(--text2)}
+.tracker-btn:active{transform:scale(.93)}
+
+/* tracker banner */
+#tracker-banner{background:var(--bg2);border-top:1px solid var(--border);padding:12px 18px;display:flex;align-items:center;gap:12px;position:sticky;bottom:0}
+.tracker-summary{display:flex;gap:16px;flex:1}
+.t-stat{display:flex;flex-direction:column;align-items:center}
+.t-val{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;line-height:1}
+.t-val.green{color:var(--green)} .t-val.red{color:var(--red)} .t-val.gold{color:var(--gold)}
+.t-lbl{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase}
+.clear-tracker{font-size:12px;color:var(--text3);padding:6px 10px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);cursor:pointer}
+
+/* settings drawer */
+.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;backdrop-filter:blur(4px)}
+.drawer-overlay.open{display:block;animation:fade-in .2s ease}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+.drawer{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-radius:24px 24px 0 0;border-top:1px solid var(--border2);z-index:101;padding:8px 20px 44px;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,.72,0,1)}
+.drawer.open{transform:translateY(0)}
+.drawer-handle{width:40px;height:4px;background:var(--border2);border-radius:99px;margin:10px auto 20px}
+.drawer-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;margin-bottom:22px}
+.field{margin-bottom:18px}
+.field-label{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.badge-tag{background:var(--bg3);border-radius:4px;padding:2px 6px;font-size:10px;color:var(--text3)}
+.field input,.field select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;color:var(--text);font-size:14px;font-weight:500;outline:none;-webkit-appearance:none;transition:border-color .2s;color-scheme:dark}
+.field input:focus,.field select:focus{border-color:var(--blue)}
+.field input::placeholder{color:var(--text3)}
+.save-btn{width:100%;background:linear-gradient(135deg,#0288d1,#40c4ff);color:#fff;border-radius:12px;padding:15px;font-size:16px;font-weight:800;font-family:'Barlow Condensed',sans-serif;cursor:pointer;margin-top:8px;transition:all .2s}
+.save-btn:active{transform:scale(.97)}
+
+/* toast */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg4);border:1px solid var(--border2);border-radius:10px;padding:12px 20px;font-size:14px;font-weight:600;color:var(--text);z-index:200;white-space:nowrap;transition:transform .35s cubic-bezier(.32,.72,0,1),opacity .35s;opacity:0;pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* empty state */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 32px;gap:12px;text-align:center;flex:1}
+.empty-icon{font-size:48px}
+.empty-title{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800}
+.empty-sub{font-size:14px;color:var(--text2);line-height:1.6}
+.retry-btn{border-radius:10px;padding:12px 24px;font-size:15px;font-weight:800;font-family:'Barlow Condensed',sans-serif;cursor:pointer;margin-top:8px;color:#fff}
+.retry-btn.bball{background:var(--orange)} .retry-btn.tennis{background:#388e3c} .retry-btn.vball{background:#7b1fa2}
+</style>
+</head>
+<body>
+
+<!-- ══ HOME ══ -->
+<div id="home" class="screen active">
+  <div class="home-header">
+    <div class="logo"><div class="logo-dot"></div>SPORTINTEL</div>
+    <button class="settings-btn" onclick="openSettings()">⚙</button>
+  </div>
+
+  <div class="date-badge">
+    <div class="day" id="day-num">—</div>
+    <div class="month-year">
+      <div class="month" id="month-name">—</div>
+      <div class="year" id="year-num">—</div>
+    </div>
+    <div class="coverage">3 sports<br>worldwide</div>
+  </div>
+
+  <div class="sport-cards">
+    <button class="sport-card basketball" onclick="startScan('basketball')">
+      <div class="sport-card-left">
+        <div class="sport-card-title">BASKETBALL</div>
+        <div class="sport-card-sub">NBA · EuroLeague · NCAA · 15+ leagues</div>
+      </div>
+      <div class="sport-card-icon">🏀</div>
+    </button>
+
+    <button class="sport-card tennis" onclick="startScan('tennis')">
+      <div class="sport-card-left">
+        <div class="sport-card-title">TENNIS</div>
+        <div class="sport-card-sub">ATP · WTA · Grand Slams · All surfaces</div>
+      </div>
+      <div class="sport-card-icon">🎾</div>
+    </button>
+
+    <button class="sport-card volleyball" onclick="startScan('volleyball')">
+      <div class="sport-card-left">
+        <div class="sport-card-title">VOLLEYBALL</div>
+        <div class="sport-card-sub">Nations League · NCAA · International</div>
+      </div>
+      <div class="sport-card-icon">🏐</div>
+    </button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-num orange" id="stat-bball">—</div><div class="stat-label">Bball Picks</div></div>
+    <div class="stat-card"><div class="stat-num green"  id="stat-tennis">—</div><div class="stat-label">Tennis Picks</div></div>
+    <div class="stat-card"><div class="stat-num purple" id="stat-vball">—</div><div class="stat-label">VBall Picks</div></div>
+  </div>
+</div>
+
+<!-- ══ SCANNING ══ -->
+<div id="scanning" class="screen">
+  <div class="scan-radar">
+    <div class="radar-ring" id="rr1"></div>
+    <div class="radar-ring" id="rr2"></div>
+    <div class="radar-ring" id="rr3"></div>
+    <div class="radar-ring" id="rr4"></div>
+    <div class="radar-sweep" id="rs"></div>
+    <div class="radar-center" id="rc">🏀</div>
+  </div>
+  <div class="scan-title" id="scan-sport-title">SCANNING</div>
+  <div class="scan-status" id="scan-status">Loading fixtures…</div>
+  <div class="progress-pct bball" id="progress-pct">0%</div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill bball" id="progress-bar"></div></div>
+  <div class="scan-note" id="scan-note">Checking leagues worldwide</div>
+</div>
+
+<!-- ══ RESULTS ══ -->
+<div id="results" class="screen">
+  <div class="results-header">
+    <div class="results-title-row">
+      <button class="back-btn" onclick="goHome()">‹</button>
+      <div class="results-title" id="results-title">TODAY'S PICKS</div>
+      <button class="rescan-btn bball" id="rescan-btn" onclick="rescan()">↺ Rescan</button>
+    </div>
+    <div class="summary-strip" id="summary-strip"></div>
+    <div class="filter-tabs" id="filter-tabs"></div>
+  </div>
+  <div class="cards-container" id="cards-container"></div>
+  <div id="tracker-banner">
+    <div class="tracker-summary">
+      <div class="t-stat"><div class="t-val green" id="t-won">0</div><div class="t-lbl">Won</div></div>
+      <div class="t-stat"><div class="t-val red"   id="t-lost">0</div><div class="t-lbl">Lost</div></div>
+      <div class="t-stat"><div class="t-val gold"  id="t-pending">0</div><div class="t-lbl">Open</div></div>
+      <div class="t-stat"><div class="t-val" id="t-rate" style="color:var(--text)">—</div><div class="t-lbl">Win %</div></div>
+    </div>
+    <button class="clear-tracker" onclick="clearTracker()">Reset</button>
+  </div>
+</div>
+
+<!-- ══ SETTINGS ══ -->
+<div class="drawer-overlay" id="settings-overlay" onclick="closeSettings()"></div>
+<div class="drawer" id="settings-drawer">
+  <div class="drawer-handle"></div>
+  <div class="drawer-title">⚙ Settings</div>
+  <div class="field">
+    <div class="field-label">Groq API Key <span class="badge-tag">Required</span></div>
+    <input type="password" id="input-groq-key" placeholder="gsk_xxxxxxxxxxxx" autocomplete="off">
+  </div>
+  <div class="field">
+    <div class="field-label">Min Confidence Threshold</div>
+    <select id="input-min-conf">
+      <option value="68">68% — Wider net</option>
+      <option value="70" selected>70% — Balanced (default)</option>
+      <option value="75">75% — Selective</option>
+      <option value="80">80% — High confidence only</option>
+    </select>
+  </div>
+  <div class="field">
+    <div class="field-label">Max Picks Per Sport Per Day</div>
+    <select id="input-max-picks">
+      <option value="5">5 picks — Ultra selective</option>
+      <option value="8">8 picks — Selective</option>
+      <option value="10" selected>10 picks — Balanced (default)</option>
+      <option value="15">15 picks — Broader</option>
+    </select>
+  </div>
+  <button class="save-btn" onclick="saveSettings()">SAVE SETTINGS</button>
+  <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:14px;line-height:1.7">
+    Free Groq key at <strong style="color:var(--text2)">console.groq.com</strong><br>
+    Or set <code style="background:var(--bg3);padding:2px 5px;border-radius:4px">GROQ_API_KEY</code> in Netlify env vars.
+  </p>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══ STATE ══
+const STATE = {
+  allFixtures : null,   // raw fixture data from API
+  picks       : { basketball: [], tennis: [], volleyball: [] },
+  tracker     : {},
+  settings    : {},
+  currentSport: null,
+  scannedAt   : { basketball: null, tennis: null, volleyball: null },
+  fixturesIn  : { basketball: 0, tennis: 0, volleyball: 0 },
+};
+
+const SPORT_META = {
+  basketball: { label: "BASKETBALL", icon: "🏀", cls: "bball",  accent: "orange", filterMarkets: ["All","⭐ Stars","Totals","Match Winner","Spread","First Half"] },
+  tennis    : { label: "TENNIS",     icon: "🎾", cls: "tennis", accent: "green",  filterMarkets: ["All","⭐ Stars","Match Winner","Games","Sets","First Set"] },
+  volleyball: { label: "VOLLEYBALL", icon: "🏐", cls: "vball",  accent: "purple", filterMarkets: ["All","⭐ Stars","Match Winner","Sets"] },
+};
+
+let activeFilter = "All";
+
+// ══ INIT ══
+function init() {
+  updateDateBadge();
+  loadSettings();
+  STATE.tracker = JSON.parse(sessionStorage.getItem('sportintel_tracker') || '{}');
+  updateHomeStats();
+}
+
+function updateDateBadge() {
+  const now    = new Date();
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  document.getElementById('day-num').textContent    = now.getDate();
+  document.getElementById('month-name').textContent = months[now.getMonth()];
+  document.getElementById('year-num').textContent   = now.getFullYear();
+}
+
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem('sportintel_settings') || '{}');
+    STATE.settings = s;
+    if (s.groqKey)  document.getElementById('input-groq-key').value  = s.groqKey;
+    if (s.minConf)  document.getElementById('input-min-conf').value  = s.minConf;
+    if (s.maxPicks) document.getElementById('input-max-picks').value = s.maxPicks;
+  } catch {}
+}
+
+function updateHomeStats() {
+  document.getElementById('stat-bball').textContent  = STATE.picks.basketball.length  || '—';
+  document.getElementById('stat-tennis').textContent = STATE.picks.tennis.length      || '—';
+  document.getElementById('stat-vball').textContent  = STATE.picks.volleyball.length  || '—';
+}
+
+function getCached(sport) {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const saved = JSON.parse(localStorage.getItem(`sportintel_${sport}`) || 'null');
+    if (!saved || saved.date !== today || !saved.picks?.length) return null;
+    const age = Date.now() - new Date(saved.scannedAt || 0).getTime();
+    if (age > 6 * 3600000) return null;
+    return saved;
+  } catch { return null; }
+}
+
+function saveCache(sport, data) {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    localStorage.setItem(`sportintel_${sport}`, JSON.stringify({ date: today, ...data }));
+  } catch {}
+}
+
+// ══ SETTINGS ══
+function openSettings()  { document.getElementById('settings-overlay').classList.add('open'); document.getElementById('settings-drawer').classList.add('open'); }
+function closeSettings() { document.getElementById('settings-overlay').classList.remove('open'); document.getElementById('settings-drawer').classList.remove('open'); }
+function saveSettings() {
+  const s = { groqKey: document.getElementById('input-groq-key').value.trim(), minConf: document.getElementById('input-min-conf').value, maxPicks: document.getElementById('input-max-picks').value };
+  STATE.settings = s;
+  localStorage.setItem('sportintel_settings', JSON.stringify(s));
+  closeSettings(); showToast('✅ Settings saved');
+}
+
+// ══ SCAN ══
+async function startScan(sport, forceRescan = false) {
+  const key = STATE.settings.groqKey || '';
+  if (!key) { openSettings(); showToast('⚠️ Enter your Groq API key first'); return; }
+
+  if (!forceRescan) {
+    const cached = getCached(sport);
+    if (cached) {
+      STATE.picks[sport]      = cached.picks;
+      STATE.fixturesIn[sport] = cached.fixturesIn;
+      STATE.scannedAt[sport]  = cached.scannedAt;
+      STATE.currentSport      = sport;
+      updateHomeStats(); renderResults(sport); showScreen('results');
+      showToast('📋 Showing cached picks'); return;
+    }
+  }
+
+  STATE.currentSport = sport;
+  const meta = SPORT_META[sport];
+  showScreen('scanning');
+
+  // Style radar for this sport
+  ['rr1','rr2','rr3','rr4'].forEach(id => {
+    const el = document.getElementById(id);
+    el.className = `radar-ring ${meta.cls}`;
+  });
+  document.getElementById('rs').className = `radar-sweep ${meta.cls}`;
+  document.getElementById('rc').className = `radar-center ${meta.cls}`;
+  document.getElementById('rc').textContent = meta.icon;
+  document.getElementById('scan-sport-title').textContent = `SCANNING ${meta.label}`;
+  document.getElementById('progress-pct').className = `progress-pct ${meta.cls}`;
+  document.getElementById('progress-bar').className = `progress-bar-fill ${meta.cls}`;
+
+  setProgress(5, 'Fetching fixtures…', 'Checking leagues worldwide');
+
+  try {
+    // Phase 1: get fixtures (cached by CDN)
+    if (!STATE.allFixtures) {
+      const r = await fetch('/api/get-sports');
+      if (!r.ok) throw new Error(`Fixtures fetch failed (HTTP ${r.status})`);
+      STATE.allFixtures = await r.json();
+    }
+
+    const fixtures = STATE.allFixtures[sport] || [];
+    if (!fixtures.length) { showError(sport, `No ${meta.label.toLowerCase()} fixtures found today.`); return; }
+
+    STATE.fixturesIn[sport] = fixtures.length;
+    setProgress(30, `Found ${fixtures.length} ${sport} fixtures — analysing…`, 'AI analysis in progress');
+
+    // Animate progress
+    let prog = 30;
+    const msgs = {
+      basketball: ['Checking NBA form…','Analysing EuroLeague data…','Scoring totals markets…','Reviewing team records…'],
+      tennis    : ['Checking ATP rankings…','Analysing WTA tour data…','Reviewing surface patterns…','Scoring match markets…'],
+      volleyball: ['Checking match records…','Analysing set patterns…','Reviewing home advantage…','Scoring markets…'],
+    };
+    let mi = 0;
+    const iv = setInterval(() => { prog = Math.min(prog + 1.5, 88); document.getElementById('scan-status').textContent = msgs[sport][mi++ % msgs[sport].length]; setProgress(Math.round(prog), null, null); }, 1000);
+
+    let result;
+    try {
+      const r2 = await fetch('/api/analyze-sports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sport, fixtures, settings: { groqKey: key, minConfidence: STATE.settings.minConf || 70, maxPicks: STATE.settings.maxPicks || 10 } }),
+      });
+      result = await r2.json();
+      if (!r2.ok) throw new Error(result.error || 'Analysis failed');
+    } finally { clearInterval(iv); }
+
+    if (result.error && !result.picks?.length) { showError(sport, result.error); return; }
+
+    STATE.picks[sport]     = result.picks || [];
+    STATE.scannedAt[sport] = result.scannedAt || new Date().toISOString();
+    saveCache(sport, { picks: STATE.picks[sport], fixturesIn: STATE.fixturesIn[sport], scannedAt: STATE.scannedAt[sport] });
+
+    setProgress(100, `Done! ${STATE.picks[sport].length} picks found`, '');
+    await new Promise(r => setTimeout(r, 600));
+    updateHomeStats(); renderResults(sport); showScreen('results');
+
+  } catch (err) {
+    showError(sport, err.message || 'Something went wrong. Check your API key.');
+  }
+}
+
+function rescan() { if (STATE.currentSport) startScan(STATE.currentSport, true); }
+
+function setProgress(pct, status, note) {
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+  if (status !== null) document.getElementById('scan-status').textContent = status;
+  if (note   !== null) document.getElementById('scan-note').textContent   = note;
+}
+
+function showError(sport, msg) {
+  const meta = SPORT_META[sport];
+  showScreen('results');
+  document.getElementById('cards-container').innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Scan Failed</div><div class="empty-sub">${msg}</div><button class="retry-btn ${meta.cls}" onclick="startScan('${sport}',true)">Try Again</button></div>`;
+}
+
+// ══ RESULTS ══
+function renderResults(sport) {
+  const meta  = SPORT_META[sport];
+  const picks = STATE.picks[sport] || [];
+  activeFilter = "All";
+
+  document.getElementById('results-title').textContent = `${meta.icon} ${meta.label} PICKS`;
+  const rescanBtn = document.getElementById('rescan-btn');
+  rescanBtn.className = `rescan-btn ${meta.cls}`;
+
+  // Summary chips
+  const chipCls = `chip-${meta.cls}`;
+  document.getElementById('summary-strip').innerHTML = `
+    <div class="summary-chip ${chipCls}">🎯 <span class="val">${picks.length}</span> picks</div>
+    <div class="summary-chip chip-gold">⭐ <span class="val">${picks.filter(p=>p.starPick).length}</span> stars</div>
+    <div class="summary-chip">High+ <span class="val">${picks.filter(p=>['High','Very High'].includes(p.confidence)).length}</span></div>
+    <div class="summary-chip">Scanned <span class="val">${STATE.fixturesIn[sport]}</span> matches</div>`;
+
+  // Filter tabs
+  const filterHTML = meta.filterMarkets.map(f =>
+    `<button class="filter-tab${f==='All'?' active '+meta.cls:''}" data-filter="${f}" onclick="setFilter(this,'${sport}')">${f}</button>`
+  ).join('');
+  document.getElementById('filter-tabs').innerHTML = filterHTML;
+
+  updateTrackerBanner(sport);
+  renderCards(sport);
+}
+
+function setFilter(btn, sport) {
+  activeFilter = btn.dataset.filter;
+  const meta = SPORT_META[sport];
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active', 'bball', 'tennis', 'vball'));
+  btn.classList.add('active', meta.cls);
+  renderCards(sport);
+}
+
+function renderCards(sport) {
+  const meta      = SPORT_META[sport];
+  const container = document.getElementById('cards-container');
+  let picks = STATE.picks[sport] || [];
+
+  if (activeFilter === '⭐ Stars') picks = picks.filter(p => p.starPick);
+  else if (activeFilter !== 'All') picks = picks.filter(p => {
+    if (activeFilter === 'Totals')      return p.market?.toLowerCase().includes('total') || p.pick?.toLowerCase().includes('points');
+    if (activeFilter === 'Match Winner')return p.market?.toLowerCase().includes('winner') || ['home win','away win'].includes(p.pick?.toLowerCase());
+    if (activeFilter === 'Sets')        return p.market?.toLowerCase().includes('set');
+    if (activeFilter === 'Games')       return p.pick?.toLowerCase().includes('games');
+    if (activeFilter === 'Spread')      return p.pick?.toLowerCase().includes('-') && p.pick?.toLowerCase().includes('win');
+    if (activeFilter === 'First Half')  return p.pick?.toLowerCase().includes('first half');
+    if (activeFilter === 'First Set')   return p.pick?.toLowerCase().includes('first set');
+    return true;
+  });
+
+  if (!picks.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">${meta.icon}</div><div class="empty-title">No picks here</div><div class="empty-sub">No ${activeFilter === 'All' ? '' : activeFilter + ' '}picks found. Try a different filter or lower your confidence threshold.</div></div>`;
+    return;
+  }
+
+  container.innerHTML = picks.map((p, i) => buildCard(p, i, meta)).join('');
+  setTimeout(() => { document.querySelectorAll('.prob-bar-fill').forEach(el => { el.style.width = el.dataset.prob + '%'; }); }, 100);
+}
+
+function buildCard(pick, idx, meta) {
+  const id      = `${pick.homeTeam}|${pick.awayTeam}`.replace(/\s+/g, '-');
+  const tracked = STATE.tracker[id] || '';
+  const confLow = (pick.confidence || 'medium').toLowerCase().replace(' ', '-');
+  const isStar  = pick.starPick;
+  const fillCls = isStar ? 'star-fill' : `${meta.cls}-fill`;
+
+  return `
+<div class="match-card ${isStar ? 'star ' + meta.cls : confLow === 'high' || confLow === 'very-high' ? 'high ' + meta.cls : ''}">
+  <div class="card-header">
+    <div class="league-badge">${pick.country} · ${pick.league}</div>
+    ${pick.kickoff ? `<div class="kickoff-badge">⏱ ${pick.kickoff}</div>` : ''}
+    ${isStar ? '<div class="star-badge">⭐ STAR</div>' : ''}
+  </div>
+  <div class="card-teams">
+    <div class="team-name">${pick.homeTeam}</div>
+    <div class="vs">VS</div>
+    <div class="team-name" style="text-align:right">${pick.awayTeam}</div>
+  </div>
+  <div class="prob-bar-wrap"><div class="prob-bar"><div class="prob-bar-fill ${fillCls}" data-prob="${pick.probability}" style="width:0%"></div></div></div>
+  <div class="card-pick">
+    <div class="pick-pill ${isStar ? '' : meta.cls}">🎯 ${pick.pick}</div>
+    <div class="prob-block">
+      <div class="prob-num">${pick.probability}%</div>
+      <div class="conf-label ${confLow}">${(pick.confidence || '').toUpperCase()}</div>
+    </div>
+  </div>
+  <div class="analysis-toggle" id="toggle-${idx}" onclick="toggleAnalysis(${idx})">
+    <div class="analysis-label">📊 View analysis</div>
+    <div class="analysis-chevron">▾</div>
+  </div>
+  <div class="analysis-body" id="analysis-${idx}">
+    <div class="analysis-text">${pick.analysis || 'No analysis available.'}</div>
+  </div>
+  <div class="tracker-row">
+    <div class="tracker-label">Track result:</div>
+    <button class="tracker-btn won  ${tracked === 'won'  ? 'selected' : ''}" onclick="trackPick('${id}','won', this)">✓ Won</button>
+    <button class="tracker-btn lost ${tracked === 'lost' ? 'selected' : ''}" onclick="trackPick('${id}','lost',this)">✗ Lost</button>
+    <button class="tracker-btn skip ${tracked === 'skip' ? 'selected' : ''}" onclick="trackPick('${id}','skip',this)">— Skip</button>
+  </div>
+</div>`;
+}
+
+function toggleAnalysis(idx) {
+  document.getElementById(`analysis-${idx}`).classList.toggle('open');
+  document.getElementById(`toggle-${idx}`).classList.toggle('open');
+}
+
+// ══ TRACKER ══
+function trackPick(id, result, btn) {
+  if (STATE.tracker[id] === result) delete STATE.tracker[id];
+  else STATE.tracker[id] = result;
+  sessionStorage.setItem('sportintel_tracker', JSON.stringify(STATE.tracker));
+  if (STATE.currentSport) updateTrackerBanner(STATE.currentSport);
+  updateHomeStats();
+  btn.closest('.tracker-row').querySelectorAll('.tracker-btn').forEach(b => b.classList.remove('selected'));
+  if (STATE.tracker[id]) btn.classList.add('selected');
+  showToast(STATE.tracker[id] ? 'Marked as ' + result : 'Mark removed');
+}
+
+function updateTrackerBanner(sport) {
+  const picks   = STATE.picks[sport] || [];
+  const vals    = Object.values(STATE.tracker);
+  const won     = vals.filter(v => v === 'won').length;
+  const lost    = vals.filter(v => v === 'lost').length;
+  const pending = Math.max(0, picks.length - vals.filter(Boolean).length);
+  const rate    = (won + lost) > 0 ? Math.round(won / (won + lost) * 100) + '%' : '—';
+  document.getElementById('t-won').textContent     = won;
+  document.getElementById('t-lost').textContent    = lost;
+  document.getElementById('t-pending').textContent = pending;
+  document.getElementById('t-rate').textContent    = rate;
+}
+
+function clearTracker() {
+  if (!confirm('Clear all tracked results?')) return;
+  STATE.tracker = {};
+  sessionStorage.removeItem('sportintel_tracker');
+  if (STATE.currentSport) { updateTrackerBanner(STATE.currentSport); renderCards(STATE.currentSport); }
+  updateHomeStats(); showToast('Tracker cleared');
+}
+
+// ══ NAV ══
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+  window.scrollTo(0, 0);
+}
+function goHome() { showScreen('home'); updateHomeStats(); }
+
+// ══ TOAST ══
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+init();
+</script>
+</body>
+</html>

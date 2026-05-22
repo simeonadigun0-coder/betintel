@@ -1,0 +1,15 @@
+{
+  "name": "sportintel",
+  "version": "1.0.0",
+  "description": "AI-powered sports betting intelligence — Basketball, Tennis, Volleyball — Vercel edition",
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "devDependencies": {
+    "vercel": "^37.0.0"
+  }
+}

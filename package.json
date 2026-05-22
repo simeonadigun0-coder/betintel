@@ -1,0 +1,15 @@
+{
+  "name": "sportintel",
+  "version": "1.0.0",
+  "description": "AI-powered sports betting intelligence — Basketball, Tennis, Volleyball",
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "netlify dev"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  }
+}

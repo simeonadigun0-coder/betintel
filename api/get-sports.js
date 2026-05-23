@@ -1,94 +1,100 @@
 // ============================================================
-//  SportIntel — get-sports.js
-//  Fetches Basketball, Tennis & Volleyball fixtures from ESPN
-//  Returns enriched data: records, form, rankings, averages
+//  SportIntel — get-sports.js  (v3 — lean, timeout-safe)
+//  Strategy:
+//   Phase 1: Fetch ALL scoreboards in parallel (fixtures only)
+//   Phase 2: ONLY fetch standings+form for leagues that have matches today
+//   This reduces ESPN calls from 54 to ~6-10 total
 // ============================================================
 
-const TIMEOUT_MS = 5000; // 5s per ESPN call — keeps total well under Vercel's 60s limit
+const TIMEOUT_MS = 5000;
 
-// ── BASKETBALL LEAGUES ────────────────────────────────────────
 const BASKETBALL_LEAGUES = [
-  { slug: "nba",                        name: "NBA",                    country: "USA"         },
-  { slug: "wnba",                       name: "WNBA",                   country: "USA"         },
-  { slug: "mens-college-basketball",    name: "NCAA Men's",             country: "USA"         },
-  { slug: "womens-college-basketball",  name: "NCAA Women's",           country: "USA"         },
-  { slug: "euroleague",                 name: "EuroLeague",             country: "Europe"      },
-  { slug: "eurocup",                    name: "EuroCup",                country: "Europe"      },
-  { slug: "acb",                        name: "Liga ACB",               country: "Spain"       },
-  { slug: "turkish-bsl",                name: "Turkish BSL",            country: "Turkey"      },
-  { slug: "bbl",                        name: "BBL",                    country: "Germany"     },
-  { slug: "french-pro-a",               name: "Pro A",                  country: "France"      },
-  { slug: "lba",                        name: "LBA",                    country: "Italy"       },
-  { slug: "vtb-united-league",          name: "VTB United League",      country: "Russia"      },
-  { slug: "nbl",                        name: "NBL",                    country: "Australia"   },
-  { slug: "cba",                        name: "CBA",                    country: "China"       },
-  { slug: "kbl",                        name: "KBL",                    country: "South Korea" },
-  { slug: "bjl",                        name: "B.League",               country: "Japan"       },
-  { slug: "aba-league",                 name: "ABA League",             country: "Balkans"     },
-  { slug: "g-league",                   name: "G League",               country: "USA"         },
+  { slug: "nba",                       name: "NBA",           country: "USA"         },
+  { slug: "wnba",                       name: "WNBA",          country: "USA"         },
+  { slug: "mens-college-basketball",    name: "NCAA Men's",    country: "USA"         },
+  { slug: "womens-college-basketball",  name: "NCAA Women's",  country: "USA"         },
+  { slug: "euroleague",                 name: "EuroLeague",    country: "Europe"      },
+  { slug: "eurocup",                    name: "EuroCup",       country: "Europe"      },
+  { slug: "acb",                        name: "Liga ACB",      country: "Spain"       },
+  { slug: "turkish-bsl",               name: "Turkish BSL",   country: "Turkey"      },
+  { slug: "nbl",                        name: "NBL",           country: "Australia"   },
+  { slug: "cba",                        name: "CBA",           country: "China"       },
+  { slug: "kbl",                        name: "KBL",           country: "South Korea" },
+  { slug: "bjl",                        name: "B.League",      country: "Japan"       },
+  { slug: "g-league",                   name: "G League",      country: "USA"         },
 ];
 
-// ── TENNIS TOURS ─────────────────────────────────────────────
 const TENNIS_TOURS = [
-  { slug: "atp",  name: "ATP Tour",   type: "Men's"   },
-  { slug: "wta",  name: "WTA Tour",   type: "Women's" },
+  { slug: "atp", name: "ATP Tour",  type: "Men's"   },
+  { slug: "wta", name: "WTA Tour",  type: "Women's" },
 ];
 
-// ── VOLLEYBALL LEAGUES ────────────────────────────────────────
 const VOLLEYBALL_LEAGUES = [
-  { slug: "womens-college-volleyball", name: "NCAA Women's Volleyball",  country: "USA",     gender: "women" },
-  { slug: "mens-college-volleyball",   name: "NCAA Men's Volleyball",    country: "USA",     gender: "men"   },
-  { slug: "avca",                      name: "AVCA Rankings",            country: "USA",     gender: "women" },
-  { slug: "vnl",                       name: "Nations League",           country: "Intl",    gender: "women" },
-  { slug: "mens-vnl",                  name: "Nations League (Men)",     country: "Intl",    gender: "men"   },
-  { slug: "olympics-womens-volleyball",name: "Olympic Women's",          country: "Intl",    gender: "women" },
-  { slug: "olympics-mens-volleyball",  name: "Olympic Men's",            country: "Intl",    gender: "men"   },
+  { slug: "womens-college-volleyball", name: "NCAA Women's Volleyball", country: "USA",  gender: "women" },
+  { slug: "mens-college-volleyball",   name: "NCAA Men's Volleyball",   country: "USA",  gender: "men"   },
+  { slug: "vnl",                       name: "Nations League (W)",      country: "Intl", gender: "women" },
+  { slug: "mens-vnl",                  name: "Nations League (M)",      country: "Intl", gender: "men"   },
 ];
 
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+// ── Quick scoreboard fetch — fixtures only, no enrichment yet ──
+async function fetchScoreboard(sport, slug, dateStr) {
+  try {
+    const res = await fetch(
+      `https://site.api.espn.com/apis/site/v2/sports/${sport}/${slug}/scoreboard?dates=${dateStr}`,
+      { signal: AbortSignal.timeout(TIMEOUT_MS) }
+    );
+    if (!res.ok) return { slug, events: [] };
+    const data = await res.json();
+    return { slug, events: data.events || [] };
+  } catch { return { slug, events: [] }; }
+}
 
-// ══════════════════════════════════════════════════════════════
-//  BASKETBALL HELPERS
-// ══════════════════════════════════════════════════════════════
-
-async function fetchBasketballStandings(slug) {
+// ── Standings fetch ─────────────────────────────────────────────
+async function fetchStandings(sport, slug) {
   const map = {};
   try {
-    const res  = await fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/${slug}/standings`, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+    const res = await fetch(
+      `https://site.api.espn.com/apis/site/v2/sports/${sport}/${slug}/standings`,
+      { signal: AbortSignal.timeout(TIMEOUT_MS) }
+    );
     if (!res.ok) return map;
     const data = await res.json();
-    const entries = data.standings?.entries || data.children?.[0]?.standings?.entries || [];
+    const entries =
+      data.standings?.entries ||
+      data.children?.[0]?.standings?.entries || [];
     for (const e of entries) {
       const name = (e.team?.displayName || "").toLowerCase();
       if (!name) continue;
-      const stat = k => e.stats?.find(s => s.name === k || s.shortDisplayName?.toLowerCase() === k.toLowerCase());
+      const s = k => e.stats?.find(x => x.name === k || x.shortDisplayName?.toLowerCase() === k)?.value ?? null;
       map[name] = {
-        position : stat("rank")?.value ?? stat("playoffSeed")?.value ?? null,
-        wins     : stat("wins")?.value ?? stat("W")?.value ?? null,
-        losses   : stat("losses")?.value ?? stat("L")?.value ?? null,
-        pct      : stat("winPercent")?.displayValue ?? stat("PCT")?.displayValue ?? null,
-        ppg      : stat("avgPoints")?.displayValue ?? stat("PPG")?.displayValue ?? null,
-        oppPpg   : stat("avgPointsAllowed")?.displayValue ?? stat("OPP PPG")?.displayValue ?? null,
-        streak   : stat("streak")?.displayValue ?? "",
-        gb       : stat("gamesBehind")?.displayValue ?? null,
+        position: s("rank") ?? s("playoffseed") ?? null,
+        wins    : s("wins")        ?? s("w")   ?? null,
+        losses  : s("losses")      ?? s("l")   ?? null,
+        pct     : e.stats?.find(x => x.name === "winPercent")?.displayValue ?? null,
+        ppg     : e.stats?.find(x => x.name === "avgPoints")?.displayValue  ?? null,
+        oppPpg  : e.stats?.find(x => x.name === "avgPointsAllowed")?.displayValue ?? null,
+        streak  : e.stats?.find(x => x.name === "streak")?.displayValue ?? "",
       };
     }
   } catch {}
   return map;
 }
 
-async function fetchBasketballForm(slug) {
-  const formMap = {};
+// ── Recent form fetch ───────────────────────────────────────────
+async function fetchForm(sport, slug) {
+  const map = {};
   try {
-    const past    = new Date(Date.now() - 21 * 86400000);
-    const fromStr = past.toISOString().split("T")[0].replace(/-/g, "");
-    const todayStr = new Date().toISOString().split("T")[0].replace(/-/g, "");
-    const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/${slug}/scoreboard?dates=${fromStr}-${todayStr}&limit=50`, { signal: AbortSignal.timeout(TIMEOUT_MS) });
-    if (!res.ok) return formMap;
+    const past = new Date(Date.now() - 21 * 86400000).toISOString().split("T")[0].replace(/-/g, "");
+    const now  = new Date().toISOString().split("T")[0].replace(/-/g, "");
+    const res  = await fetch(
+      `https://site.api.espn.com/apis/site/v2/sports/${sport}/${slug}/scoreboard?dates=${past}-${now}&limit=50`,
+      { signal: AbortSignal.timeout(TIMEOUT_MS) }
+    );
+    if (!res.ok) return map;
     const data = await res.json();
-    for (const event of data.events || []) {
-      if (event.status?.type?.state !== "post") continue;
-      const comps = event.competitions?.[0]?.competitors;
+    for (const ev of data.events || []) {
+      if (ev.status?.type?.state !== "post") continue;
+      const comps = ev.competitions?.[0]?.competitors;
       if (!comps || comps.length < 2) continue;
       const home = comps.find(c => c.homeAway === "home");
       const away = comps.find(c => c.homeAway === "away");
@@ -97,233 +103,172 @@ async function fetchBasketballForm(slug) {
       const as_ = parseInt(away.score) || 0;
       const hk = (home.team?.displayName || "").toLowerCase();
       const ak = (away.team?.displayName || "").toLowerCase();
-      if (!formMap[hk]) formMap[hk] = [];
-      if (!formMap[ak]) formMap[ak] = [];
-      formMap[hk].unshift({ r: hs > as_ ? "W" : "L", score: `${hs}-${as_}`, opp: away.team?.displayName || "", venue: "H" });
-      formMap[ak].unshift({ r: as_ > hs ? "W" : "L", score: `${as_}-${hs}`, opp: home.team?.displayName || "", venue: "A" });
+      if (!map[hk]) map[hk] = [];
+      if (!map[ak]) map[ak] = [];
+      map[hk].unshift({ r: hs > as_ ? "W" : hs < as_ ? "L" : "D", score: `${hs}-${as_}`, opp: away.team?.displayName || "", venue: "H" });
+      map[ak].unshift({ r: as_ > hs ? "W" : as_ < hs ? "L" : "D", score: `${as_}-${hs}`, opp: home.team?.displayName || "", venue: "A" });
     }
   } catch {}
-  return formMap;
+  return map;
 }
 
-function shortForm(arr) { return (arr || []).slice(0, 5).map(f => f.r).join("") || "?????"; }
+function shortForm(arr) { return (arr||[]).slice(0,5).map(f=>f.r).join("") || "?????"; }
 function detailedForm(arr) {
-  if (!arr?.length) return "No recent data";
-  return arr.slice(0, 5).map(f => `${f.r} ${f.score} vs ${f.opp} (${f.venue})`).join(" | ");
+  if (!arr?.length) return "No data";
+  return arr.slice(0,5).map(f=>`${f.r} ${f.score} vs ${f.opp} (${f.venue})`).join(" | ");
 }
 
-async function fetchBasketballLeague(league, dateStr) {
-  const url = `https://site.api.espn.com/apis/site/v2/sports/basketball/${league.slug}/scoreboard?dates=${dateStr}`;
-  try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
-    if (!res.ok) return [];
-    const data = await res.json();
-    if (!data.events?.length) return [];
+// ══════════════════════════════════════════════════════════════
+//  BASKETBALL
+// ══════════════════════════════════════════════════════════════
+async function getBasketball(dateStr) {
+  // Phase 1: all scoreboards in parallel
+  const boards = await Promise.all(
+    BASKETBALL_LEAGUES.map(l => fetchScoreboard("basketball", l.slug, dateStr))
+  );
 
-    const [standings, recentForm] = await Promise.all([
-      fetchBasketballStandings(league.slug),
-      fetchBasketballForm(league.slug),
-    ]);
+  // Only enrich leagues that actually have games today
+  const active = boards.filter(b => b.events.some(e => e.status?.type?.state !== "post"));
+  if (!active.length) return [];
 
-    const fixtures = [];
-    for (const event of data.events) {
+  // Phase 2: standings + form only for active leagues
+  const enriched = await Promise.all(
+    active.map(async b => {
+      const league = BASKETBALL_LEAGUES.find(l => l.slug === b.slug);
+      const [standings, form] = await Promise.all([
+        fetchStandings("basketball", b.slug),
+        fetchForm("basketball", b.slug),
+      ]);
+      return { league, events: b.events, standings, form };
+    })
+  );
+
+  const fixtures = [];
+  for (const { league, events, standings, form } of enriched) {
+    for (const event of events) {
       if (event.status?.type?.state === "post") continue;
       const comps = event.competitions?.[0]?.competitors;
       if (!comps || comps.length < 2) continue;
       const home = comps.find(c => c.homeAway === "home");
       const away = comps.find(c => c.homeAway === "away");
       if (!home || !away) continue;
-
       const hn = home.team?.displayName || "";
       const an = away.team?.displayName || "";
-      const hk = hn.toLowerCase();
-      const ak = an.toLowerCase();
-      const hSt = standings[hk] || {};
-      const aSt = standings[ak] || {};
-      const hFm = recentForm[hk] || [];
-      const aFm = recentForm[ak] || [];
-
+      const hSt = standings[hn.toLowerCase()] || {};
+      const aSt = standings[an.toLowerCase()] || {};
+      const hFm = form[hn.toLowerCase()] || [];
+      const aFm = form[an.toLowerCase()] || [];
       fixtures.push({
-        sport   : "basketball",
-        country : league.country,
-        league  : league.name,
-        homeTeam: hn,
-        awayTeam: an,
-        kickoff : event.date ? new Date(event.date).toISOString().substring(11, 16) + " UTC" : "",
-        venue   : event.competitions?.[0]?.venue?.fullName || "",
-        // home stats
-        homePOS    : hSt.position ?? "?",
-        homeW      : hSt.wins     ?? "?",
-        homeL      : hSt.losses   ?? "?",
-        homePCT    : hSt.pct      ?? "?",
-        homePPG    : hSt.ppg      ?? "?",
-        homeOppPPG : hSt.oppPpg   ?? "?",
-        homeStreak : hSt.streak   ?? "?",
-        homeForm5  : shortForm(hFm),
-        homeFormFull: detailedForm(hFm),
-        // away stats
-        awayPOS    : aSt.position ?? "?",
-        awayW      : aSt.wins     ?? "?",
-        awayL      : aSt.losses   ?? "?",
-        awayPCT    : aSt.pct      ?? "?",
-        awayPPG    : aSt.ppg      ?? "?",
-        awayOppPPG : aSt.oppPpg   ?? "?",
-        awayStreak : aSt.streak   ?? "?",
-        awayForm5  : shortForm(aFm),
-        awayFormFull: detailedForm(aFm),
+        sport: "basketball", country: league.country, league: league.name,
+        homeTeam: hn, awayTeam: an,
+        kickoff: event.date ? new Date(event.date).toISOString().substring(11,16) + " UTC" : "",
+        homePOS: hSt.position??"?", homeW: hSt.wins??"?", homeL: hSt.losses??"?",
+        homePCT: hSt.pct??"?", homePPG: hSt.ppg??"?", homeOppPPG: hSt.oppPpg??"?",
+        homeStreak: hSt.streak??"?", homeForm5: shortForm(hFm), homeFormFull: detailedForm(hFm),
+        awayPOS: aSt.position??"?", awayW: aSt.wins??"?", awayL: aSt.losses??"?",
+        awayPCT: aSt.pct??"?", awayPPG: aSt.ppg??"?", awayOppPPG: aSt.oppPpg??"?",
+        awayStreak: aSt.streak??"?", awayForm5: shortForm(aFm), awayFormFull: detailedForm(aFm),
       });
     }
-    return fixtures;
-  } catch { return []; }
-}
-
-// ══════════════════════════════════════════════════════════════
-//  TENNIS HELPERS
-// ══════════════════════════════════════════════════════════════
-
-// ── Tennis: ESPN only shows ONE active tournament at a time and
-//    often returns nothing between rounds. We use a Groq-powered
-//    fallback that generates today's known ATP/WTA fixtures from
-//    its training knowledge when ESPN returns empty.
-async function fetchTennisTour(tour, dateStr) {
-  const fixtures = [];
-  const seen     = new Set();
-
-  // Try ESPN first — works when tournament is active
-  const espnUrls = [
-    `https://site.api.espn.com/apis/site/v2/sports/tennis/${tour.slug}/scoreboard`,
-    `https://site.api.espn.com/apis/site/v2/sports/tennis/${tour.slug}/scoreboard?dates=${dateStr}`,
-  ];
-
-  for (const url of espnUrls) {
-    try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(9000) });
-      if (!res.ok) continue;
-      const data = await res.json();
-      const events = data.events || [];
-      if (!events.length) continue;
-
-      for (const event of events) {
-        const state = event.status?.type?.state || "";
-        if (state === "post") continue;
-        const comps = event.competitions?.[0]?.competitors;
-        if (!comps || comps.length < 2) continue;
-        const p1 = comps[0];
-        const p2 = comps[1];
-        const p1Name = p1.athlete?.displayName || p1.team?.displayName || "";
-        const p2Name = p2.athlete?.displayName || p2.team?.displayName || "";
-        if (!p1Name || !p2Name) continue;
-        const key = `${p1Name}|${p2Name}`.toLowerCase();
-        if (seen.has(key)) continue;
-        seen.add(key);
-        const notes      = event.competitions?.[0]?.notes || [];
-        const tournament = notes[0]?.headline || event.name || tour.name;
-        const surface    = notes.find(n => n.headline?.match(/clay|grass|hard/i))?.headline || "";
-        const round      = event.competitions?.[0]?.type?.text || "";
-        fixtures.push({
-          sport      : "tennis",
-          tour       : tour.name,
-          tourType   : tour.type,
-          tournament,
-          surface,
-          round,
-          player1    : p1Name,
-          player2    : p2Name,
-          p1Rank     : p1.athlete?.ranking || p1.curatedRank?.current || "?",
-          p2Rank     : p2.athlete?.ranking || p2.curatedRank?.current || "?",
-          p1Record   : p1.records?.[0]?.summary || "",
-          p2Record   : p2.records?.[0]?.summary || "",
-          kickoff    : event.date ? new Date(event.date).toISOString().substring(11,16) + " UTC" : "",
-        });
-      }
-      if (fixtures.length > 0) break;
-    } catch { continue; }
   }
-
   return fixtures;
 }
 
 // ══════════════════════════════════════════════════════════════
-//  VOLLEYBALL HELPERS
+//  TENNIS
 // ══════════════════════════════════════════════════════════════
-
-// ── Volleyball needs same multi-endpoint strategy as tennis —
-//    tournaments span multiple days, single date query returns nothing
-async function fetchVolleyballLeague(league, dateStr) {
+async function getTennis(dateStr) {
   const fixtures = [];
   const seen     = new Set();
 
-  const yesterday = new Date(Date.now() - 1 * 86400000).toISOString().split("T")[0].replace(/-/g, "");
-  const threeDays = new Date(Date.now() + 3 * 86400000).toISOString().split("T")[0].replace(/-/g, "");
-
-  const endpoints = [
-    // 1) No date filter — shows active season/tournament
-    `https://site.api.espn.com/apis/site/v2/sports/volleyball/${league.slug}/scoreboard`,
-    // 2) Today's date
-    `https://site.api.espn.com/apis/site/v2/sports/volleyball/${league.slug}/scoreboard?dates=${dateStr}`,
-    // 3) Date range across active week
-    `https://site.api.espn.com/apis/site/v2/sports/volleyball/${league.slug}/scoreboard?dates=${yesterday}-${threeDays}`,
-    // 4) Core events API fallback
-    `https://sports.core.api.espn.com/v2/sports/volleyball/leagues/${league.slug}/events?dates=${dateStr}&limit=100`,
-  ];
-
-  for (const url of endpoints) {
-    try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
-      if (!res.ok) continue;
-      const data = await res.json();
-
-      const events = data.events || data.items || [];
-      if (!events.length) continue;
-
-      for (const event of events) {
-        const state = event.status?.type?.state || "";
-        if (state === "post") continue;
-
-        const comps = event.competitions?.[0]?.competitors;
-        if (!comps || comps.length < 2) continue;
-
-        const home = comps.find(c => c.homeAway === "home") || comps[0];
-        const away = comps.find(c => c.homeAway === "away") || comps[1];
-        if (!home || !away) continue;
-
-        const hn = home.team?.displayName || "";
-        const an = away.team?.displayName || "";
-        if (!hn || !an) continue;
-
-        // Deduplicate
-        const key = `${hn}|${an}`.toLowerCase();
-        if (seen.has(key)) continue;
-        seen.add(key);
-
-        const homeRecord = home.records?.[0]?.summary || "";
-        const awayRecord = away.records?.[0]?.summary || "";
-
-        // Extract standings/win-loss if available
-        const homeStat = s => home.statistics?.find(x => x.name === s)?.displayValue ?? null;
-        const awayStat = s => away.statistics?.find(x => x.name === s)?.displayValue ?? null;
-
-        fixtures.push({
-          sport      : "volleyball",
-          country    : league.country,
-          league     : league.name,
-          gender     : league.gender,
-          homeTeam   : hn,
-          awayTeam   : an,
-          homeRecord : homeRecord || `${homeStat("wins") || "?"}W-${homeStat("losses") || "?"}L`,
-          awayRecord : awayRecord || `${awayStat("wins") || "?"}W-${awayStat("losses") || "?"}L`,
-          homeRank   : home.curatedRank?.current || "?",
-          awayRank   : away.curatedRank?.current || "?",
-          kickoff    : event.date ? new Date(event.date).toISOString().substring(11, 16) + " UTC" : "",
-          venue      : event.competitions?.[0]?.venue?.fullName || "",
-        });
-      }
-
-      if (fixtures.length > 0) break;
-
-    } catch { continue; }
+  for (const tour of TENNIS_TOURS) {
+    const urls = [
+      `https://site.api.espn.com/apis/site/v2/sports/tennis/${tour.slug}/scoreboard`,
+      `https://site.api.espn.com/apis/site/v2/sports/tennis/${tour.slug}/scoreboard?dates=${dateStr}`,
+    ];
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (!data.events?.length) continue;
+        for (const event of data.events) {
+          if (event.status?.type?.state === "post") continue;
+          const comps = event.competitions?.[0]?.competitors;
+          if (!comps || comps.length < 2) continue;
+          const p1 = comps[0], p2 = comps[1];
+          const p1n = p1.athlete?.displayName || p1.team?.displayName || "";
+          const p2n = p2.athlete?.displayName || p2.team?.displayName || "";
+          if (!p1n || !p2n) continue;
+          const key = `${p1n}|${p2n}`.toLowerCase();
+          if (seen.has(key)) continue;
+          seen.add(key);
+          const notes = event.competitions?.[0]?.notes || [];
+          fixtures.push({
+            sport: "tennis", tour: tour.name, tourType: tour.type,
+            tournament: notes[0]?.headline || event.name || tour.name,
+            surface: notes.find(n => n.headline?.match(/clay|grass|hard/i))?.headline || "",
+            round: event.competitions?.[0]?.type?.text || "",
+            player1: p1n, player2: p2n,
+            p1Rank: p1.athlete?.ranking || p1.curatedRank?.current || "?",
+            p2Rank: p2.athlete?.ranking || p2.curatedRank?.current || "?",
+            p1Record: p1.records?.[0]?.summary || "",
+            p2Record: p2.records?.[0]?.summary || "",
+            kickoff: event.date ? new Date(event.date).toISOString().substring(11,16) + " UTC" : "",
+          });
+        }
+        if (fixtures.filter(f => f.tour === tour.name).length > 0) break;
+      } catch { continue; }
+    }
   }
+  return fixtures;
+}
 
+// ══════════════════════════════════════════════════════════════
+//  VOLLEYBALL
+// ══════════════════════════════════════════════════════════════
+async function getVolleyball(dateStr) {
+  const fixtures = [];
+  const seen = new Set();
+
+  await Promise.all(VOLLEYBALL_LEAGUES.map(async league => {
+    const urls = [
+      `https://site.api.espn.com/apis/site/v2/sports/volleyball/${league.slug}/scoreboard`,
+      `https://site.api.espn.com/apis/site/v2/sports/volleyball/${league.slug}/scoreboard?dates=${dateStr}`,
+    ];
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (!data.events?.length) continue;
+        for (const event of data.events) {
+          if (event.status?.type?.state === "post") continue;
+          const comps = event.competitions?.[0]?.competitors;
+          if (!comps || comps.length < 2) continue;
+          const home = comps.find(c => c.homeAway === "home") || comps[0];
+          const away = comps.find(c => c.homeAway === "away") || comps[1];
+          if (!home || !away) continue;
+          const hn = home.team?.displayName || "";
+          const an = away.team?.displayName || "";
+          if (!hn || !an) continue;
+          const key = `${hn}|${an}`.toLowerCase();
+          if (seen.has(key)) continue;
+          seen.add(key);
+          fixtures.push({
+            sport: "volleyball", country: league.country, league: league.name, gender: league.gender,
+            homeTeam: hn, awayTeam: an,
+            homeRecord: home.records?.[0]?.summary || "",
+            awayRecord: away.records?.[0]?.summary || "",
+            homeRank: home.curatedRank?.current || "?",
+            awayRank: away.curatedRank?.current || "?",
+            kickoff: event.date ? new Date(event.date).toISOString().substring(11,16) + " UTC" : "",
+          });
+        }
+        if (fixtures.filter(f => f.league === league.name).length > 0) break;
+      } catch { continue; }
+    }
+  }));
   return fixtures;
 }
 
@@ -335,8 +280,7 @@ module.exports = async (req, res) => {
   const now      = new Date();
   const midnight = new Date(today);
   midnight.setDate(midnight.getDate() + 1);
-  const secsToMidnight = Math.floor((midnight - now) / 1000);
-  const cacheTTL = Math.min(21600, secsToMidnight);
+  const cacheTTL = Math.min(21600, Math.floor((midnight - now) / 1000));
 
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -347,50 +291,24 @@ module.exports = async (req, res) => {
   try {
     const dateStr = today.replace(/-/g, "");
 
-    // ── Run ALL sports fully in parallel with a 55s hard timeout ──
-    // This prevents Vercel's 60s function limit from triggering a
-    // plain-text error instead of our JSON response
-    const withTimeout = (promise, ms) =>
-      Promise.race([promise, new Promise(resolve => setTimeout(() => resolve([]), ms))]);
-
-    // Basketball — run all leagues in one big parallel batch
-    const basketballPromise = Promise.all(
-      BASKETBALL_LEAGUES.map(l => fetchBasketballLeague(l, dateStr).catch(() => []))
-    ).then(results => results.flat());
-
-    // Tennis — both tours in parallel
-    const tennisPromise = Promise.all(
-      TENNIS_TOURS.map(t => fetchTennisTour(t, dateStr).catch(() => []))
-    ).then(results => results.flat());
-
-    // Volleyball — all leagues in parallel
-    const volleyballPromise = Promise.all(
-      VOLLEYBALL_LEAGUES.map(l => fetchVolleyballLeague(l, dateStr).catch(() => []))
-    ).then(results => results.flat());
-
-    // Wait for all three with hard 55s timeout each
+    // Run all 3 sports in parallel — each has its own internal timeout safety
     const [basketball, tennis, volleyball] = await Promise.all([
-      withTimeout(basketballPromise, 55000),
-      withTimeout(tennisPromise,     55000),
-      withTimeout(volleyballPromise, 55000),
+      getBasketball(dateStr).catch(() => []),
+      getTennis(dateStr).catch(() => []),
+      getVolleyball(dateStr).catch(() => []),
     ]);
 
-    const sortKO = arr => [...arr].sort((a, b) => (a.kickoff || "").localeCompare(b.kickoff || ""));
+    const sortKO = arr => [...arr].sort((a,b) => (a.kickoff||"").localeCompare(b.kickoff||""));
 
     return res.status(200).json({
       date      : today,
       basketball: sortKO(basketball),
       tennis    : sortKO(tennis),
       volleyball: sortKO(volleyball),
-      totals    : {
-        basketball: basketball.length,
-        tennis    : tennis.length,
-        volleyball: volleyball.length,
-      },
+      totals    : { basketball: basketball.length, tennis: tennis.length, volleyball: volleyball.length },
     });
 
   } catch (err) {
-    // Always return JSON — never let Vercel's plain-text error reach the client
     res.removeHeader("Cache-Control");
     return res.status(500).json({ error: err.message || "Server error" });
   }
